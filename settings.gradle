@@ -1,0 +1,2 @@
+rootProject.name = "ShareLance"
+include ':app'
