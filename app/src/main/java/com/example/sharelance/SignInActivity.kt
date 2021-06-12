@@ -5,6 +5,8 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import com.example.sharelance.daos.userDao
+import com.example.sharelance.models.User
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -47,6 +49,12 @@ class SignInActivity : AppCompatActivity() {
             signIn()
         }
     }
+
+    override fun onStart() {
+        super.onStart()
+        val currentUser = auth.currentUser
+        updateUI(currentUser)
+    }
     private fun signIn() {
         val signInIntent = googleSignInClient.signInIntent
         startActivityForResult(signInIntent, RC_SIGN_IN)
@@ -62,29 +70,22 @@ class SignInActivity : AppCompatActivity() {
         }
     }
 
-    private fun handleSignInResult(task: Task<GoogleSignInAccount>?) {
+    private fun handleSignInResult(completedTask: Task<GoogleSignInAccount>) {
         try {
-            // Google Sign In was successful, authenticate with Firebase
-            val account = task?.getResult(ApiException::class.java)!!
-            Log.d(
-                TAG,
-                "firebaseAuthWithGoogle:" + account.id
-            )
+            val account =
+                completedTask.getResult(ApiException::class.java)!!
+            Log.d(TAG, "firebaseAuthWithGoogle:" + account.id)
             firebaseAuthWithGoogle(account.idToken!!)
         } catch (e: ApiException) {
-            // Google Sign In failed, update UI appropriately
-            Log.w(
-                TAG,
-                "Google sign in failed",
-                e
-            )
+            Log.w(TAG, "signInResult:failed code=" + e.statusCode)
+
         }
     }
 
     private fun firebaseAuthWithGoogle(idToken: String) {
         val credential = GoogleAuthProvider.getCredential(idToken, null)
-        signInButton.visibility = View.GONE
-        progressBar.visibility = View.VISIBLE
+//        signInButton.visibility = View.GONE
+//        progressBar.visibility = View.VISIBLE
         GlobalScope.launch(Dispatchers.IO){
             val auth = auth.signInWithCredential(credential).await()
             val firebaseUser = auth.user
@@ -97,6 +98,12 @@ class SignInActivity : AppCompatActivity() {
 
     private fun updateUI(firebaseUser: FirebaseUser?) {
         if(firebaseUser != null) {
+
+            val user = User(firebaseUser.uid,firebaseUser.displayName.toString() ,firebaseUser.photoUrl.toString())
+            val userDao = userDao()
+            userDao.addUser(user)
+
+
             val mainActivityIntent = Intent(this, MainActivity::class.java)
             startActivity(mainActivityIntent)
             finish()
@@ -106,6 +113,4 @@ class SignInActivity : AppCompatActivity() {
 
         }
     }
-
-
 }
