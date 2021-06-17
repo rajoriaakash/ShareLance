@@ -1,6 +1,7 @@
 package com.example.sharelance
 
 import android.view.LayoutInflater
+import android.view.OrientationEventListener
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -14,7 +15,7 @@ import com.firebase.ui.firestore.FirestoreRecyclerOptions
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 
-class PostAdapter(options: FirestoreRecyclerOptions<Post>) :
+class PostAdapter(options: FirestoreRecyclerOptions<Post>, val listener: IPostAdapter) :
     FirestoreRecyclerAdapter<Post, PostAdapter.PostViewHolder>(options) {
 
     class PostViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
@@ -28,7 +29,11 @@ class PostAdapter(options: FirestoreRecyclerOptions<Post>) :
 
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PostViewHolder {
-        return PostViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.item_post,parent,false))
+        val viewHolder = PostViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.item_post,parent,false))
+        viewHolder.likeButton.setOnClickListener{
+            listener.onItemClicked(snapshots.getSnapshot(viewHolder.adapterPosition).id)
+        }
+        return viewHolder
     }
 
     override fun onBindViewHolder(holder: PostViewHolder, position: Int, model: Post) {
@@ -37,5 +42,19 @@ class PostAdapter(options: FirestoreRecyclerOptions<Post>) :
         Glide.with(holder.userImage.context).load(model.createdBy.imageUrl).circleCrop().into(holder.userImage)
         holder.likeCount.text = model.likedBy.size.toString()
         holder.createdAt.text = Utils.getTimeAgo(model.createdAt)
+
+        val auth = Firebase.auth
+        val currentUserId = auth.currentUser!!.uid
+        val isLiked = model.likedBy.contains(currentUserId)
+
+        if(isLiked){
+            holder.likeButton.setImageDrawable(ContextCompat.getDrawable(holder.likeButton.context,R.drawable.ic_liked))
+        }else{
+            holder.likeButton.setImageDrawable(ContextCompat.getDrawable(holder.likeButton.context,R.drawable.ic_unliked))
+        }
     }
+}
+
+interface IPostAdapter{
+    fun onItemClicked(postId:String)
 }

@@ -3,7 +3,9 @@ package com.example.sharelance.daos
 
 import com.example.sharelance.models.Post
 import com.example.sharelance.models.User
+import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.GlobalScope
@@ -26,5 +28,26 @@ class PostDao {
             postCollection.document().set(post)
 
         }
+    }
+
+    fun getPostById(postId : String): Task<DocumentSnapshot> {
+        return postCollection.document(postId).get()
+    }
+
+    fun updateLikes(postId : String){
+        GlobalScope.launch(){
+            val currentUserId = auth.currentUser!!.uid
+            val post = getPostById(postId).await().toObject(Post::class.java)!!
+
+            val isLiked = post.likedBy.contains(currentUserId)
+
+            if(isLiked){
+                post.likedBy.remove(currentUserId)
+            }else{
+                post.likedBy.add(currentUserId)
+            }
+            postCollection.document(postId).set(post)
+        }
+
     }
 }
