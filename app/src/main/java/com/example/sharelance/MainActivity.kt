@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.sharelance.daos.PostDao
 import com.example.sharelance.models.Post
 import com.firebase.ui.firestore.FirestoreRecyclerOptions
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.Query
 import kotlinx.android.synthetic.main.activity_main.*
 
@@ -21,6 +22,13 @@ class MainActivity : AppCompatActivity(), IPostAdapter {
 
         fab.setOnClickListener{
             val intent = Intent(this,CreatePostActivity::class.java)
+            startActivity(intent)
+        }
+
+        signOutButton.setOnClickListener{
+            FirebaseAuth.getInstance().signOut();
+
+            val intent = Intent(this,SignInActivity::class.java)
             startActivity(intent)
         }
 
